@@ -2,8 +2,8 @@
 
 Small FastAPI service for diagnostic test bookings and simulated payments.
 
-Uses only Python, FastAPI, Pydantic, SQLAlchemy, SQLite, JWT authentication, and
-pytest. Postman can be used for manual API testing.
+Uses only Python, FastAPI, Pydantic, SQLAlchemy, SQLite, and JWT authentication.
+Postman can be used for manual API testing.
 
 ## Run locally
 
@@ -60,12 +60,3 @@ POST /payments/webhook/
 SQLite is used by default and can be changed with `DATABASE_URL`. Users own bookings.
 Bookings reference a centre and test and have one payment. Payment `event_id` is
 unique, so repeated webhook events do not create duplicate payments.
-
-## Tests
-
-```powershell
-python -m pytest
-```
-
-The tests cover authentication, protected routes, booking validation and ownership,
-successful and failed payments, invalid IDs, and duplicate webhook events.

@@ -2,9 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_user
 from app.database import get_db
-from app.models import DiagnosticCentre, DiagnosticTest, User
+from app.models import DiagnosticCentre, DiagnosticTest
 from app.schemas import CentreCreate, CentreResponse, TestCreate, TestResponse
 
 router = APIRouter(tags=["centres and tests"])
@@ -14,7 +13,6 @@ router = APIRouter(tags=["centres and tests"])
 def create_centre(
     data: CentreCreate,
     db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
 ):
     centre = DiagnosticCentre(**data.model_dump())
     db.add(centre)
@@ -32,7 +30,6 @@ def list_centres(db: Session = Depends(get_db)):
 def create_test(
     data: TestCreate,
     db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
 ):
     if db.get(DiagnosticCentre, data.centre_id) is None:
         raise HTTPException(status_code=404, detail="Diagnostic centre not found")

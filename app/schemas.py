@@ -4,24 +4,6 @@ from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class SignupRequest(BaseModel):
-    email: str = Field(
-        min_length=3,
-        max_length=255,
-        pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
-    )
-    password: str = Field(min_length=8)
-
-
-class LoginRequest(SignupRequest):
-    pass
-
-
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-
-
 class CentreCreate(BaseModel):
     name: str = Field(min_length=1)
     location: str = Field(min_length=1)
@@ -44,6 +26,11 @@ class TestResponse(TestCreate):
 
 
 class BookingCreate(BaseModel):
+    patient_email: str = Field(
+        min_length=3,
+        max_length=255,
+        pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+    )
     test_id: int = Field(gt=0)
     centre_id: int = Field(gt=0)
     appointment_datetime: datetime
@@ -52,7 +39,7 @@ class BookingCreate(BaseModel):
 class BookingResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
-    user_id: int
+    patient_email: str
     test_id: int
     centre_id: int
     appointment_datetime: datetime

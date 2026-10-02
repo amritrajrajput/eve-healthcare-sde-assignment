@@ -1,22 +1,20 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_user
 from app.database import get_db
-from app.models import Booking, DiagnosticCentre, DiagnosticTest, User
+from app.models import Booking, DiagnosticCentre, DiagnosticTest
 from app.schemas import BookingCreate, BookingResponse
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
 
-def owned_booking(booking_id: int, user: User, db: Session) -> Booking:
+def get_booking_or_404(booking_id: int, db: Session) -> Booking:
     booking = db.get(Booking, booking_id)
     if booking is None:
         raise HTTPException(status_code=404, detail="Booking not found")
-    if booking.user_id != user.id:
-        raise HTTPException(status_code=403, detail="You do not own this booking")
     return booking
 
 
@@ -24,7 +22,6 @@ def owned_booking(booking_id: int, user: User, db: Session) -> Booking:
 def create_booking(
     data: BookingCreate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
 ):
     centre = db.get(DiagnosticCentre, data.centre_id)
     test = db.get(DiagnosticTest, data.test_id)
@@ -35,7 +32,7 @@ def create_booking(
     if data.appointment_datetime <= datetime.now(data.appointment_datetime.tzinfo):
         raise HTTPException(status_code=400, detail="Appointment must be in the future")
     booking = Booking(
-        user_id=user.id,
+        patient_email=data.patient_email,
         test_id=test.id,
         centre_id=centre.id,
         appointment_datetime=data.appointment_datetime,
@@ -50,31 +47,26 @@ def create_booking(
 
 @router.get("/", response_model=list[BookingResponse])
 def list_bookings(
-    db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    db: Session = Depends(get_db),
 ):
-    return list(
-        db.query(Booking)
-        .filter(Booking.user_id == user.id)
-        .order_by(Booking.id)
-    )
+    query = select(Booking).order_by(Booking.id)
+    return list(db.scalars(query))
 
 
 @router.get("/{booking_id}", response_model=BookingResponse)
 def get_booking(
     booking_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
 ):
-    return owned_booking(booking_id, user, db)
+    return get_booking_or_404(booking_id, db)
 
 
 @router.post("/{booking_id}/cancel", response_model=BookingResponse)
 def cancel_booking(
     booking_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
 ):
-    booking = owned_booking(booking_id, user, db)
+    booking = get_booking_or_404(booking_id, db)
     if booking.status in {"CONFIRMED", "FAILED"}:
         raise HTTPException(status_code=409, detail="Booking cannot be cancelled now")
     booking.status = "CANCELLED"

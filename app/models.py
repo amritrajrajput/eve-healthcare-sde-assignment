@@ -1,19 +1,10 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, String, Text, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
-
-
-class User(Base):
-    __tablename__ = "users"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
-    password_hash: Mapped[str] = mapped_column(Text)
-    bookings: Mapped[list["Booking"]] = relationship(back_populates="user")
 
 
 class DiagnosticCentre(Base):
@@ -41,13 +32,12 @@ class Booking(Base):
     __tablename__ = "bookings"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    patient_email: Mapped[str] = mapped_column(String(255))
     test_id: Mapped[int] = mapped_column(ForeignKey("diagnostic_tests.id"))
     centre_id: Mapped[int] = mapped_column(ForeignKey("diagnostic_centres.id"))
     appointment_datetime: Mapped[datetime] = mapped_column(DateTime)
     amount: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     status: Mapped[str] = mapped_column(String(20), default="PENDING")
-    user: Mapped[User] = relationship(back_populates="bookings")
     test: Mapped[DiagnosticTest] = relationship(back_populates="bookings")
     centre: Mapped[DiagnosticCentre] = relationship(back_populates="bookings")
     payment: Mapped["Payment | None"] = relationship(back_populates="booking", uselist=False)
